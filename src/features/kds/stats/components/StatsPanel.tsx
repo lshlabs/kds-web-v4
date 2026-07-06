@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import type { KdsStatsHourly, KdsStatsMenu, KdsStatsResponse, Order } from "../../../../types";
+import { HourlyFlowChart, type HourlyFlowDatum } from "./HourlyFlowChart";
 
 type HourlyMetric = "orders" | "revenue" | "averageCompletion" | "delayed";
 type MenuChartMetric = "orders" | "revenue";
@@ -68,7 +69,21 @@ export function StatsPanel({ loading = false, orders, stats }: StatsPanelProps) 
   const showReferenceNote = !stats || totalOrders < 5 || completedOrders < 2;
   const hourly = fillHourlySlots(stats?.hourly ?? []);
   const hasHourlyData = (stats?.hourly.length ?? 0) > 0;
-  const hourlyMaxValue = Math.max(...hourly.map((item) => getHourlyValue(item, hourlyMetric) ?? 0), 0);
+  const hourlyChartData: HourlyFlowDatum[] = hourly.map((item) => {
+    const value = getHourlyValue(item, hourlyMetric);
+    const hasData = value !== null && value > 0;
+    return {
+      hour: item.hour,
+      hourTick: formatHourTick(item.hour),
+      value: hasData ? value : 0,
+      hasData,
+      valueLabel: getHourlyDisplayValue(item, hourlyMetric),
+      orders: `${item.orders}건`,
+      revenue: formatCurrency(item.revenue),
+      averageCompletion: formatSeconds(item.average_completion_seconds),
+      delayed: `${item.delayed_orders}건`,
+    };
+  });
   const kitchen = stats?.kitchen;
   const kitchenCoreMetrics = [
     {
@@ -208,38 +223,7 @@ export function StatsPanel({ loading = false, orders, stats }: StatsPanelProps) 
         ) : !hasHourlyData ? (
           <p className="kds-panel-empty">표시할 시간대별 데이터가 없습니다.</p>
         ) : (
-          <div className="kds-hourly-chart-scroll">
-            <div className="kds-hourly-chart" aria-label={`${getHourlyMetricLabel(hourlyMetric)} 시간대별 흐름`}>
-              {hourly.map((item) => {
-                const value = getHourlyValue(item, hourlyMetric);
-                const emptyValue = value === null || value <= 0;
-                const barHeight = emptyValue || hourlyMaxValue <= 0 ? 0 : Math.max(6, Math.round((value / hourlyMaxValue) * 100));
-                const valueLabel = getHourlyDisplayValue(item, hourlyMetric);
-
-                return (
-                  <div
-                    className={`kds-hourly-bar-item${emptyValue ? " empty" : ""}`}
-                    key={item.hour}
-                    tabIndex={0}
-                    title={getHourlyTooltipText(item)}
-                  >
-                    <div className="kds-hourly-bar-track" aria-hidden="true">
-                      <div className="kds-hourly-bar" style={{ height: `${barHeight}%` }} />
-                    </div>
-                    <span className="kds-hourly-value">{valueLabel}</span>
-                    <span className="kds-hourly-hour">{formatHourTick(item.hour)}</span>
-                    <span className="kds-hourly-tooltip" role="tooltip">
-                      <span className="kds-hourly-tooltip-title">{item.hour}</span>
-                      <span>주문 수 {item.orders}건</span>
-                      <span>매출 {formatCurrency(item.revenue)}</span>
-                      <span>평균 완료 시간 {formatSeconds(item.average_completion_seconds)}</span>
-                      <span>지연 주문 {item.delayed_orders}건</span>
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <HourlyFlowChart data={hourlyChartData} metricLabel={getHourlyMetricLabel(hourlyMetric)} />
         )}
       </div>
 
@@ -414,16 +398,6 @@ function getHourlyDisplayValue(item: KdsStatsHourly, metric: HourlyMetric) {
   }
   const value = getHourlyValue(item, metric);
   return value === null ? "-" : `${value}건`;
-}
-
-function getHourlyTooltipText(item: KdsStatsHourly) {
-  return [
-    `시간대 ${item.hour}`,
-    `주문 수 ${item.orders}건`,
-    `매출 ${formatCurrency(item.revenue)}`,
-    `평균 완료 시간 ${formatSeconds(item.average_completion_seconds)}`,
-    `지연 주문 ${item.delayed_orders}건`,
-  ].join("\n");
 }
 
 function fillHourlySlots(hourly: KdsStatsHourly[]) {

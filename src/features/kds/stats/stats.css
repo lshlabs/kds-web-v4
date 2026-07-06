@@ -27,12 +27,18 @@
 }
 
 .kds-panel--stats .kds-metric {
-  padding: 14px 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  gap: 6px;
+  padding: 15px 16px;
 }
 
 .kds-panel--stats .kds-metric-strip {
+  border-bottom: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(156px, 1fr));
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 }
 
 .kds-panel--stats .kds-metric-divider {
@@ -71,10 +77,12 @@
 }
 
 .kds-panel--stats .kds-metric.primary {
-  background: var(--color-surface-2);
+  background: var(--color-accent-subtle);
+  border-color: var(--color-accent-border);
 }
 
 .kds-panel--stats .kds-metric.primary .kds-metric-value {
+  color: var(--color-accent);
   font-size: 26px;
 }
 
@@ -93,17 +101,23 @@
 }
 
 .kds-stats-insights {
-  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-accent);
+  border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 18px 0;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 16px 18px;
 }
 
 .kds-stats-insights-title {
   color: var(--color-text-muted);
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
 .kds-stats-insight-copy {
@@ -134,17 +148,20 @@
 }
 
 .kds-stats-snapshot {
-  border-bottom: 1px solid var(--color-border);
   display: flex;
   flex-wrap: wrap;
-  gap: 10px 18px;
-  padding: 14px 0 16px;
+  gap: 8px;
+  padding: 4px 0 8px;
 }
 
 .kds-stats-snapshot span {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
   color: var(--color-text-muted);
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.4;
+  padding: 6px 12px;
 }
 
 .kds-stats-snapshot strong {
@@ -184,128 +201,56 @@
   color: var(--color-accent-fg);
 }
 
-.kds-hourly-chart-scroll {
-  overflow-x: auto;
-  overflow-y: visible;
-  padding: 6px 2px 0;
-}
-
-.kds-hourly-chart {
-  align-items: end;
-  display: grid;
-  gap: 12px;
-  grid-auto-flow: column;
-  grid-auto-columns: 38px;
-  min-height: 214px;
-  min-width: 1188px;
-  overflow-x: visible;
-  overflow-y: visible;
-  padding: 60px 8px 4px;
-}
-
-.kds-hourly-bar-item {
-  align-items: center;
-  display: grid;
-  gap: 7px;
-  grid-template-rows: 120px minmax(18px, auto) 16px;
-  min-width: 38px;
-  outline: none;
-  position: relative;
-}
-
-.kds-hourly-bar-track {
-  align-items: end;
-  background: transparent;
-  border: 0;
-  border-radius: 8px;
-  display: flex;
-  height: 120px;
-  justify-self: center;
-  overflow: hidden;
-  padding: 3px;
-  width: 18px;
-}
-
-.kds-hourly-bar {
-  background: var(--color-accent);
-  border-radius: 5px 5px 0 0;
-  min-height: 0;
-  transition: height 0.2s ease;
+.kds-hourly-chart-box {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 14px 12px 6px;
   width: 100%;
 }
 
-.kds-hourly-bar-item.empty .kds-hourly-bar {
-  background: transparent;
+.kds-hourly-chart-box .recharts-cartesian-axis-tick text {
+  fill: var(--color-text-muted);
 }
 
-.kds-hourly-bar-item.empty .kds-hourly-bar-track {
-  background: transparent;
+.kds-hourly-chart-box .recharts-surface {
+  overflow: visible;
 }
 
-.kds-hourly-value {
+.kds-hourly-tip {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-floating-elevated);
   color: var(--color-text);
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1.2;
-  min-height: 14px;
-  overflow-wrap: anywhere;
-  text-align: center;
-}
-
-.kds-hourly-hour {
-  color: var(--color-text-muted);
-  font-size: 11px;
-  font-weight: 600;
-  text-align: center;
-}
-
-.kds-hourly-tooltip {
-  background: #ffffff;
-  border: 1px solid rgba(17, 24, 39, 0.12);
-  border-radius: 8px;
-  bottom: calc(100% + 8px);
-  box-shadow: 0 12px 32px rgba(17, 24, 39, 0.16);
-  color: #111827;
-  display: none;
+  display: flex;
   flex-direction: column;
   font-size: 12px;
-  gap: 4px;
-  left: 50%;
+  gap: 5px;
   line-height: 1.35;
-  min-width: 150px;
-  max-width: min(240px, 80vw);
-  padding: 10px;
-  pointer-events: none;
-  position: absolute;
-  transform: translateX(-50%);
-  white-space: nowrap;
-  z-index: 30;
+  min-width: 168px;
+  padding: 11px 12px;
 }
 
-.kds-hourly-tooltip-title {
-  color: #111827;
+.kds-hourly-tip-title {
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-size: 12px;
   font-weight: 800;
+  margin-bottom: 2px;
+  padding-bottom: 6px;
 }
 
-.kds-hourly-bar-item:hover .kds-hourly-tooltip,
-.kds-hourly-bar-item:focus .kds-hourly-tooltip {
+.kds-hourly-tip-row {
+  color: var(--color-text-muted);
   display: flex;
+  justify-content: space-between;
+  gap: 16px;
 }
 
-@media (max-width: 640px) {
-  .kds-hourly-chart {
-    gap: 10px;
-    grid-auto-columns: 34px;
-    min-width: 1056px;
-  }
-
-  .kds-hourly-bar-item {
-    min-width: 34px;
-  }
-
-  .kds-hourly-value {
-    font-size: 10px;
-  }
+.kds-hourly-tip-row strong {
+  color: var(--color-text);
+  font-weight: 700;
 }
 
 .kds-menu-stat-list {
