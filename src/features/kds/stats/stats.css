@@ -1,5 +1,5 @@
-/* ════════════════════════════════════════════��══
-   Stats panel — metric strip + menu breakdown
+/* ═══════════════════════════════════════════════
+   Stats dashboard — KPI hero + section cards
 ═══════════════════════════════════════════════ */
 .kds-stats-only-shell {
   background: var(--color-bg);
@@ -8,107 +8,103 @@
   padding: 18px;
 }
 
-.kds-metric-strip {
-  align-items: stretch;
-  border-bottom: 1px solid var(--color-border);
-  display: flex;
-  gap: 0;
-  flex-wrap: wrap;
+/* Low-data pill in header */
+.kds-stats-lowdata-pill {
+  background: var(--color-amber-subtle);
+  border: 1px solid var(--color-amber-border);
+  border-radius: 999px;
+  color: var(--color-amber);
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 11px;
+  white-space: nowrap;
 }
 
-.kds-metric {
-  align-items: flex-start;
+/* Vertical rhythm for the whole dashboard body */
+.kds-stats-body {
   display: flex;
-  flex-basis: 50%;
-  flex: 1;
   flex-direction: column;
-  gap: 3px;
-  padding: 18px 22px;
+  gap: 16px;
+  padding-top: 14px;
 }
 
-.kds-panel--stats .kds-metric {
+/* ── KPI hero ─────────────────────────────────── */
+.kds-stat-kpis {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.kds-kpi {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  gap: 6px;
-  padding: 15px 16px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 18px;
 }
 
-.kds-panel--stats .kds-metric-strip {
-  border-bottom: 0;
-  display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-}
-
-.kds-panel--stats .kds-metric-divider {
-  display: none;
-}
-
-.kds-metric-divider {
-  background: var(--color-border);
-  display: none;
-  flex-shrink: 0;
-  margin: 14px 0;
-  width: 1px;
-}
-
-@media (min-width: 768px) {
-  .kds-metric-strip { flex-wrap: nowrap; }
-
-  .kds-metric { flex-basis: auto; }
-
-  .kds-metric-divider { display: block; }
-}
-
-.kds-metric-value {
-  color: var(--color-text);
-  font-size: 28px;
-  font-weight: 800;
-  letter-spacing: -0.5px;
-  line-height: 1;
-  overflow-wrap: anywhere;
-}
-
-.kds-panel--stats .kds-metric-value {
-  font-size: 22px;
-  letter-spacing: 0;
-  line-height: 1.15;
-}
-
-.kds-panel--stats .kds-metric.primary {
+.kds-kpi.accent {
   background: var(--color-accent-subtle);
   border-color: var(--color-accent-border);
 }
 
-.kds-panel--stats .kds-metric.primary .kds-metric-value {
-  color: var(--color-accent);
-  font-size: 26px;
-}
-
-.kds-panel--stats .kds-metric.secondary .kds-metric-value {
-  color: var(--color-text);
-  font-size: 19px;
-  font-weight: 750;
-}
-
-.kds-metric-value.accent { color: var(--color-accent); }
-
-.kds-metric-label {
+.kds-kpi-label {
   color: var(--color-text-muted);
-  font-size: 11px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 700;
 }
 
+.kds-kpi-value {
+  color: var(--color-text);
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.kds-kpi.accent .kds-kpi-value {
+  color: var(--color-accent);
+}
+
+.kds-kpi-delta {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 700;
+  gap: 4px;
+  padding: 3px 9px;
+  width: fit-content;
+}
+
+.kds-kpi-delta.up {
+  background: var(--color-green-subtle);
+  color: var(--color-green);
+}
+
+.kds-kpi-delta.down {
+  background: var(--color-red-subtle);
+  color: var(--color-red);
+}
+
+.kds-kpi-delta.flat {
+  background: var(--color-surface-2);
+  color: var(--color-text-muted);
+}
+
+/* ── Insight banner ───────────────────────────── */
 .kds-stats-insights {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-left: 3px solid var(--color-accent);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-top: 12px;
   padding: 16px 18px;
 }
 
@@ -147,40 +143,86 @@
   margin: 4px 0 0;
 }
 
-.kds-stats-snapshot {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 4px 0 8px;
-}
-
-.kds-stats-snapshot span {
-  background: var(--color-surface-2);
+/* ── Section card ─────────────────────────────── */
+.kds-stat-section {
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 999px;
-  color: var(--color-text-muted);
-  font-size: 12px;
-  line-height: 1.4;
-  padding: 6px 12px;
-}
-
-.kds-stats-snapshot strong {
-  color: var(--color-text);
-  font-weight: 800;
-}
-
-.kds-hourly-flow {
+  border-radius: var(--radius-lg);
   display: flex;
   flex-direction: column;
   gap: 14px;
-  padding: 14px 0 22px;
-  position: relative;
+  padding: 16px 18px;
 }
 
+.kds-stat-section-head {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.kds-stat-section-title {
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+}
+
+/* ── Key metrics grid ─────────────────────────── */
+.kds-stat-metrics {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.kds-stat-metric {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 13px 14px;
+}
+
+.kds-stat-metric-label {
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.kds-stat-metric-value {
+  color: var(--color-text);
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.kds-stat-metric-note {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.kds-stat-metric-note.flat {
+  color: var(--color-text-muted);
+}
+
+.kds-stat-metric-note.up {
+  color: var(--color-green);
+}
+
+.kds-stat-metric-note.down {
+  color: var(--color-red);
+}
+
+/* ── Hourly chart ─────────────────────────────── */
 .kds-hourly-tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .kds-hourly-tab {
@@ -191,8 +233,8 @@
   cursor: pointer;
   font-size: 12px;
   font-weight: 700;
-  min-height: 34px;
-  padding: 0 12px;
+  min-height: 32px;
+  padding: 0 11px;
 }
 
 .kds-hourly-tab.active {
@@ -202,10 +244,6 @@
 }
 
 .kds-hourly-chart-box {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: 14px 12px 6px;
   width: 100%;
 }
 
@@ -244,8 +282,8 @@
 .kds-hourly-tip-row {
   color: var(--color-text-muted);
   display: flex;
-  justify-content: space-between;
   gap: 16px;
+  justify-content: space-between;
 }
 
 .kds-hourly-tip-row strong {
@@ -253,82 +291,25 @@
   font-weight: 700;
 }
 
-.kds-menu-stat-list {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  padding: 14px 22px 20px;
-}
-
-.kds-panel--stats .kds-menu-stat-list {
-  padding: 14px 0;
-}
-
-.kds-kitchen-grid {
-  display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-}
-
-.kds-kitchen-block {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 14px 0 18px;
-}
-
-.kds-kitchen-card {
-  background: var(--color-surface-2);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  min-height: 98px;
-  padding: 13px;
-}
-
-.kds-kitchen-label {
-  color: var(--color-text-muted);
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.kds-kitchen-value {
-  color: var(--color-text);
-  font-size: 20px;
-  font-weight: 800;
-  line-height: 1.15;
-  overflow-wrap: anywhere;
-}
-
-.kds-kitchen-note {
-  color: var(--color-text-muted);
-  font-size: 11px;
-  line-height: 1.35;
-}
-
+/* ── Kitchen details ──────────────────────────── */
 .kds-kitchen-detail {
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
-}
-
-.kds-kitchen-detail-title {
-  color: var(--color-text-muted);
-  font-size: 11px;
-  font-weight: 800;
-  padding: 11px 12px 7px;
+  overflow: hidden;
 }
 
 .kds-kitchen-detail-row {
   align-items: center;
-  border-top: 1px solid var(--color-border);
   display: grid;
   gap: 10px;
   grid-template-columns: minmax(108px, 0.8fr) minmax(96px, 1fr) minmax(120px, 1fr);
-  padding: 10px 12px;
+  padding: 12px 14px;
+}
+
+.kds-kitchen-detail-row + .kds-kitchen-detail-row {
+  border-top: 1px solid var(--color-border);
 }
 
 .kds-kitchen-detail-row span {
@@ -339,7 +320,8 @@
 
 .kds-kitchen-detail-row strong {
   color: var(--color-text);
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 800;
   overflow-wrap: anywhere;
 }
 
@@ -350,23 +332,25 @@
   text-align: right;
 }
 
+/* ── Menu performance ─────────────────────────── */
 .kds-menu-performance {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 14px 0 20px;
+  gap: 18px;
 }
 
 .kds-menu-subsection {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .kds-menu-subtitle {
   color: var(--color-text-muted);
   font-size: 11px;
   font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
 .kds-menu-toolbar {
@@ -380,7 +364,7 @@
 .kds-menu-control-group {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .kds-menu-control {
@@ -391,8 +375,8 @@
   cursor: pointer;
   font-size: 12px;
   font-weight: 700;
-  min-height: 34px;
-  padding: 0 12px;
+  min-height: 32px;
+  padding: 0 11px;
 }
 
 .kds-menu-control.active {
@@ -417,21 +401,45 @@
   color: var(--color-text);
   font-size: 12px;
   font-weight: 700;
-  min-height: 34px;
+  min-height: 32px;
   padding: 0 28px 0 10px;
+}
+
+.kds-menu-stat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .kds-menu-stat-row {
   align-items: center;
   display: grid;
   gap: 10px;
-  grid-template-columns: minmax(96px, 160px) 1fr minmax(52px, auto);
+  grid-template-columns: 22px minmax(96px, 160px) 1fr minmax(56px, auto);
+}
+
+.kds-menu-stat-rank {
+  align-items: center;
+  background: var(--color-surface-2);
+  border-radius: 6px;
+  color: var(--color-text-muted);
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 800;
+  height: 22px;
+  justify-content: center;
+  width: 22px;
+}
+
+.kds-menu-stat-row:first-child .kds-menu-stat-rank {
+  background: var(--color-accent-subtle);
+  color: var(--color-accent);
 }
 
 .kds-menu-stat-name {
   color: var(--color-text);
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -440,7 +448,7 @@
 .kds-menu-stat-bar-wrap {
   background: var(--color-surface-3);
   border-radius: 999px;
-  height: 6px;
+  height: 8px;
   overflow: hidden;
 }
 
@@ -453,13 +461,15 @@
 }
 
 .kds-menu-stat-count {
-  color: var(--color-text-muted);
+  color: var(--color-text);
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   text-align: right;
 }
 
 .kds-menu-table-wrap {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   overflow-x: auto;
 }
 
@@ -474,12 +484,17 @@
   border-bottom: 1px solid var(--color-border);
   color: var(--color-text);
   font-size: 12px;
-  padding: 10px 8px;
+  padding: 11px 10px;
   text-align: right;
   white-space: nowrap;
 }
 
-.kds-menu-table th {
+.kds-menu-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.kds-menu-table thead th {
+  background: var(--color-surface-2);
   color: var(--color-text-muted);
   font-weight: 700;
 }
@@ -496,7 +511,30 @@
   text-overflow: ellipsis;
 }
 
+.kds-menu-delta.up {
+  color: var(--color-green);
+  font-weight: 700;
+}
+
+.kds-menu-delta.down {
+  color: var(--color-red);
+  font-weight: 700;
+}
+
+.kds-menu-delta.flat {
+  color: var(--color-text-muted);
+}
+
+/* ── Responsive ───────────────────────────────── */
 @media (max-width: 640px) {
+  .kds-stat-section {
+    padding: 14px;
+  }
+
+  .kds-kpi-value {
+    font-size: 24px;
+  }
+
   .kds-menu-toolbar {
     align-items: stretch;
     flex-direction: column;
@@ -512,7 +550,7 @@
   }
 
   .kds-menu-stat-row {
-    grid-template-columns: minmax(82px, 118px) 1fr minmax(48px, auto);
+    grid-template-columns: 20px minmax(72px, 108px) 1fr minmax(50px, auto);
   }
 
   .kds-kitchen-detail-row {

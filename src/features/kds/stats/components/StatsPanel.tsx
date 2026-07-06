@@ -11,6 +11,8 @@ type DisplayInsight = {
   highlight: string;
   suffix?: string;
 };
+type DeltaTone = "up" | "down" | "flat";
+type DeltaChip = { text: string; tone: DeltaTone };
 
 const FULL_DAY_HOURS = Array.from({ length: 24 }, (_, hour) => hour);
 
@@ -67,6 +69,19 @@ export function StatsPanel({ loading = false, orders, stats }: StatsPanelProps) 
   const peakHourLabel = summary?.peak_hour ?? (totalOrders > 0 ? "집계 중" : "주문 없음");
   const insights = buildDisplayInsights(stats);
   const showReferenceNote = !stats || totalOrders < 5 || completedOrders < 2;
+
+  const comparison = stats?.comparison.vs_7d_average ?? null;
+  const ordersDelta = buildCountDelta(comparison?.orders_delta ?? null, "건");
+  const revenueDelta = buildCurrencyDelta(comparison?.revenue_delta ?? null);
+  const completionDelta: DeltaChip = { text: `완료 ${completedOrders}건`, tone: "flat" };
+  const avgCompletionDelta = buildSecondsDelta(comparison?.average_completion_seconds_delta ?? null);
+
+  const kpis: Array<{ label: string; value: string; delta: DeltaChip | null; accent?: boolean }> = [
+    { label: "총 주문", value: totalOrders > 0 ? `${totalOrders}건` : "-", delta: ordersDelta, accent: true },
+    { label: "매출", value: displayRevenue > 0 ? `${displayRevenue.toLocaleString()}원` : "-", delta: revenueDelta, accent: true },
+    { label: "완료율", value: displayCompletionRate, delta: completionDelta },
+  ];
+
   const hourly = fillHourlySlots(stats?.hourly ?? []);
   const hasHourlyData = (stats?.hourly.length ?? 0) > 0;
   const hourlyChartData: HourlyFlowDatum[] = hourly.map((item) => {
@@ -85,23 +100,34 @@ export function StatsPanel({ loading = false, orders, stats }: StatsPanelProps) 
     };
   });
   const kitchen = stats?.kitchen;
-  const kitchenCoreMetrics = [
+
+  const keyMetrics = [
     {
       label: "평균 완료 시간",
       value: averageCompletionLabel,
-      note: summary?.average_completion_seconds === null ? "완료 주문 필요" : "완료 주문 기준",
+      note: avgCompletionDelta ? avgCompletionDelta.text : summary?.average_completion_seconds === null ? "완료 주문 필요" : "완료 주문 기준",
+      tone: avgCompletionDelta?.tone ?? "flat",
+    },
+    {
+      label: "지연 주문",
+      value: `${delayedOrders}건`,
+      note: delayedOrders === 0 ? "지연 없음" : "10분 초과",
+      tone: (delayedOrders === 0 ? "up" : "down") as DeltaTone,
+    },
+    {
+      label: "피크 시간",
+      value: getReferenceTone(totalOrders, peakHourLabel),
+      note: totalOrders > 0 ? "주문 집중" : "주문 없음",
+      tone: "flat" as DeltaTone,
     },
     {
       label: "정시 완료율",
-      value: kitchen?.on_time_rate === undefined || kitchen.on_time_rate === null ? "-" : formatRate(kitchen.on_time_rate),
-      note: kitchen?.on_time_rate === undefined || kitchen.on_time_rate === null ? "완료 주문 필요" : "10분 기준",
-    },
-    {
-      label: "지연 주문 수",
-      value: `${delayedOrders}건`,
-      note: delayedOrders === 0 ? "지연 주문 없음" : "10분 초과",
+      value: kitchen?.on_time_rate === undefined || kitchen?.on_time_rate === null ? "-" : formatRate(kitchen.on_time_rate),
+      note: kitchen?.on_time_rate === undefined || kitchen?.on_time_rate === null ? "완료 주문 필요" : "10분 기준",
+      tone: "flat" as DeltaTone,
     },
   ];
+
   const kitchenDetails = [
     {
       label: "가장 오래 걸린 주문",
@@ -138,145 +164,69 @@ export function StatsPanel({ loading = false, orders, stats }: StatsPanelProps) 
       <div className="kds-panel-header">
         <div>
           <h2 className="kds-panel-title">오늘 장사 현황</h2>
-          <p className="kds-panel-subtitle">{summaryDate}</p>
+          <p className="kds-panel-subtitle">{summaryDate} · 최근 7일 평균과 비교</p>
         </div>
+        {showReferenceNote ? <span className="kds-stats-lowdata-pill">데이터 적음 · 참고용</span> : null}
       </div>
 
-      <div className="kds-metric-strip">
-        <div className="kds-metric primary">
-          <span className="kds-metric-value">{totalOrders}</span>
-          <span className="kds-metric-label">총 주문</span>
-        </div>
-        <div className="kds-metric-divider" />
-        <div className="kds-metric primary">
-          <span className="kds-metric-value">{displayRevenue > 0 ? `${displayRevenue.toLocaleString()}원` : "-"}</span>
-          <span className="kds-metric-label">매출</span>
-        </div>
-        <div className="kds-metric-divider" />
-        <div className="kds-metric secondary">
-          <span className="kds-metric-value">{averageCompletionLabel}</span>
-          <span className="kds-metric-label">평균 완료 시간</span>
-        </div>
-        <div className="kds-metric-divider" />
-        <div className="kds-metric secondary">
-          <span className="kds-metric-value">{delayedOrders}</span>
-          <span className="kds-metric-label">지연 주문</span>
-        </div>
-      </div>
-
-      <div className="kds-stats-insights">
-        <span className="kds-stats-insights-title">오늘 장사 요약</span>
-        {loading ? (
-          <p className="kds-panel-empty">통계를 불러오는 중입니다.</p>
-        ) : insights.length === 0 ? (
-          <p className="kds-panel-empty">{totalOrders === 0 ? "오늘은 아직 주문이 없습니다." : "분석할 주문 데이터가 더 필요합니다."}</p>
-        ) : (
-          <div className="kds-stats-insight-copy">
-            {insights.slice(0, 3).map((insight) => (
-              <p className="kds-stats-insight-line" key={`${insight.prefix ?? ""}${insight.highlight}${insight.suffix ?? ""}`}>
-                {insight.prefix}
-                <strong>{insight.highlight}</strong>
-                {insight.suffix}
-              </p>
-            ))}
-          </div>
-        )}
-        {showReferenceNote ? (
-          <p className="kds-stats-reference-note">주문/완료 데이터가 적어 분석 참고용으로만 확인하세요.</p>
-        ) : null}
-      </div>
-
-      <div className="kds-section-divider">
-        <span className="kds-section-label">오늘 한눈에 보기</span>
-      </div>
-
-      <div className="kds-stats-snapshot">
-        <span>완료 <strong>{completedOrders}건</strong></span>
-        <span>완료율 <strong>{displayCompletionRate}</strong></span>
-        <span>피크 시간 <strong>{getReferenceTone(totalOrders, peakHourLabel)}</strong></span>
-        <span>평균 완료 <strong>{averageCompletionLabel}</strong></span>
-        <span>지연 <strong>{delayedOrders}건</strong></span>
-      </div>
-
-      <div className="kds-section-divider">
-        <span className="kds-section-label">시간대별 주문 흐름</span>
-      </div>
-
-      <div className="kds-hourly-flow">
-        <div className="kds-hourly-tabs" role="tablist" aria-label="시간대별 지표">
-          {HOURLY_METRIC_OPTIONS.map((option) => (
-            <button
-              aria-selected={hourlyMetric === option.key}
-              className={`kds-hourly-tab${hourlyMetric === option.key ? " active" : ""}`}
-              key={option.key}
-              onClick={() => setHourlyMetric(option.key)}
-              role="tab"
-              type="button"
-            >
-              {option.label}
-            </button>
+      <div className="kds-stats-body">
+        <div className="kds-stat-kpis">
+          {kpis.map((kpi) => (
+            <article className={`kds-kpi${kpi.accent ? " accent" : ""}`} key={kpi.label}>
+              <span className="kds-kpi-label">{kpi.label}</span>
+              <span className="kds-kpi-value">{kpi.value}</span>
+              {kpi.delta ? <span className={`kds-kpi-delta ${kpi.delta.tone}`}>{kpi.delta.text}</span> : <span className="kds-kpi-delta flat">비교 데이터 없음</span>}
+            </article>
           ))}
         </div>
 
-        {loading ? (
-          <p className="kds-panel-empty">시간대별 통계를 불러오는 중입니다.</p>
-        ) : !hasHourlyData ? (
-          <p className="kds-panel-empty">표시할 시간대별 데이터가 없습니다.</p>
-        ) : (
-          <HourlyFlowChart data={hourlyChartData} metricLabel={getHourlyMetricLabel(hourlyMetric)} />
-        )}
-      </div>
-
-      <div className="kds-section-divider">
-        <span className="kds-section-label">주방 처리 상태</span>
-      </div>
-
-      {loading ? (
-        <p className="kds-panel-empty">주방 효율 통계를 불러오는 중입니다.</p>
-      ) : !stats ? (
-        <p className="kds-panel-empty">주방 효율은 주문이 더 쌓이면 표시됩니다.</p>
-      ) : (
-        <div className="kds-kitchen-block">
-          <div className="kds-kitchen-grid">
-            {kitchenCoreMetrics.map((metric) => (
-              <div className="kds-kitchen-card" key={metric.label}>
-                <span className="kds-kitchen-label">{metric.label}</span>
-                <span className="kds-kitchen-value">{metric.value}</span>
-                <span className="kds-kitchen-note">{metric.note}</span>
-              </div>
-            ))}
-          </div>
-          <div className="kds-kitchen-detail">
-            <span className="kds-kitchen-detail-title">상세 분석</span>
-            {kitchenDetails.map((metric) => (
-              <div className="kds-kitchen-detail-row" key={metric.label}>
-                <span>{metric.label}</span>
-                <strong>{metric.value}</strong>
-                <em>{metric.note}</em>
-              </div>
-            ))}
-          </div>
+        <div className="kds-stats-insights">
+          <span className="kds-stats-insights-title">오늘 장사 요약</span>
+          {loading ? (
+            <p className="kds-panel-empty">통계를 불러오는 중입니다.</p>
+          ) : insights.length === 0 ? (
+            <p className="kds-panel-empty">{totalOrders === 0 ? "오늘은 아직 주문이 없습니다." : "분석할 주문 데이터가 더 필요합니다."}</p>
+          ) : (
+            <div className="kds-stats-insight-copy">
+              {insights.slice(0, 3).map((insight) => (
+                <p className="kds-stats-insight-line" key={`${insight.prefix ?? ""}${insight.highlight}${insight.suffix ?? ""}`}>
+                  {insight.prefix}
+                  <strong>{insight.highlight}</strong>
+                  {insight.suffix}
+                </p>
+              ))}
+            </div>
+          )}
+          {showReferenceNote ? (
+            <p className="kds-stats-reference-note">주문/완료 데이터가 적어 분석 참고용으로만 확인하세요.</p>
+          ) : null}
         </div>
-      )}
 
-      <div className="kds-section-divider">
-        <span className="kds-section-label">메뉴별 장사 성과</span>
-      </div>
+        <section className="kds-stat-section" aria-label="핵심 지표">
+          <div className="kds-stat-section-head">
+            <h3 className="kds-stat-section-title">핵심 지표</h3>
+          </div>
+          <div className="kds-stat-metrics">
+            {keyMetrics.map((metric) => (
+              <div className="kds-stat-metric" key={metric.label}>
+                <span className="kds-stat-metric-label">{metric.label}</span>
+                <span className="kds-stat-metric-value">{metric.value}</span>
+                <span className={`kds-stat-metric-note ${metric.tone}`}>{metric.note}</span>
+              </div>
+            ))}
+          </div>
+        </section>
 
-      {loading ? (
-        <p className="kds-panel-empty">메뉴별 통계를 불러오는 중입니다.</p>
-      ) : menus.length === 0 ? (
-        <p className="kds-panel-empty">메뉴 통계는 주문이 더 쌓이면 표시됩니다.</p>
-      ) : (
-        <div className="kds-menu-performance">
-          <div className="kds-menu-toolbar">
-            <div className="kds-menu-control-group" role="tablist" aria-label="메뉴 TOP 차트 기준">
-              {MENU_CHART_OPTIONS.map((option) => (
+        <section className="kds-stat-section" aria-label="시간대별 주문 흐름">
+          <div className="kds-stat-section-head">
+            <h3 className="kds-stat-section-title">시간대별 주문 흐름</h3>
+            <div className="kds-hourly-tabs" role="tablist" aria-label="시간대별 지표">
+              {HOURLY_METRIC_OPTIONS.map((option) => (
                 <button
-                  aria-selected={menuChartMetric === option.key}
-                  className={`kds-menu-control${menuChartMetric === option.key ? " active" : ""}`}
+                  aria-selected={hourlyMetric === option.key}
+                  className={`kds-hourly-tab${hourlyMetric === option.key ? " active" : ""}`}
                   key={option.key}
-                  onClick={() => setMenuChartMetric(option.key)}
+                  onClick={() => setHourlyMetric(option.key)}
                   role="tab"
                   type="button"
                 >
@@ -284,70 +234,129 @@ export function StatsPanel({ loading = false, orders, stats }: StatsPanelProps) 
                 </button>
               ))}
             </div>
-
-            <label className="kds-menu-sort">
-              <span>정렬</span>
-              <select value={menuSortKey} onChange={(event) => setMenuSortKey(event.target.value as MenuSortKey)}>
-                {MENU_SORT_OPTIONS.map((option) => (
-                  <option key={option.key} value={option.key}>{option.label}</option>
-                ))}
-              </select>
-            </label>
           </div>
+          {loading ? (
+            <p className="kds-panel-empty">시간대별 통계를 불러오는 중입니다.</p>
+          ) : !hasHourlyData ? (
+            <p className="kds-panel-empty">표시할 시간대별 데이터가 없습니다.</p>
+          ) : (
+            <HourlyFlowChart data={hourlyChartData} metricLabel={getHourlyMetricLabel(hourlyMetric)} />
+          )}
+        </section>
 
-          <div className="kds-menu-subsection">
-            <span className="kds-menu-subtitle">TOP 메뉴 차트</span>
-            <div className="kds-menu-stat-list" aria-label={`메뉴 TOP ${getMenuChartLabel(menuChartMetric)}`}>
-              {topMenus.map((menu) => {
-                const value = getMenuChartValue(menu, menuChartMetric);
-                const width = topMenuMaxValue > 0 ? Math.round((value / topMenuMaxValue) * 100) : 0;
-
-                return (
-                  <div className="kds-menu-stat-row" key={menu.menu_name}>
-                    <span className="kds-menu-stat-name">{menu.menu_name}</span>
-                    <div className="kds-menu-stat-bar-wrap">
-                      <div className="kds-menu-stat-bar" style={{ width: `${width}%` }} />
-                    </div>
-                    <span className="kds-menu-stat-count">{getMenuChartDisplayValue(menu, menuChartMetric)}</span>
-                  </div>
-                );
-              })}
+        <section className="kds-stat-section" aria-label="주방 처리 상태">
+          <div className="kds-stat-section-head">
+            <h3 className="kds-stat-section-title">주방 처리 상태</h3>
+          </div>
+          {loading ? (
+            <p className="kds-panel-empty">주방 효율 통계를 불러오는 중입니다.</p>
+          ) : !stats ? (
+            <p className="kds-panel-empty">주방 효율은 주문이 더 쌓이면 표시됩니다.</p>
+          ) : (
+            <div className="kds-kitchen-detail">
+              {kitchenDetails.map((metric) => (
+                <div className="kds-kitchen-detail-row" key={metric.label}>
+                  <span>{metric.label}</span>
+                  <strong>{metric.value}</strong>
+                  <em>{metric.note}</em>
+                </div>
+              ))}
             </div>
-          </div>
+          )}
+        </section>
 
-          <div className="kds-menu-subsection">
-            <span className="kds-menu-subtitle">메뉴별 상세 표</span>
-            <div className="kds-menu-table-wrap">
-              <table className="kds-menu-table">
-                <thead>
-                  <tr>
-                    <th>메뉴명</th>
-                    <th>주문 수</th>
-                    <th>매출</th>
-                    <th>평균 완료 시간</th>
-                    <th>지연 수</th>
-                    <th>전일 대비</th>
-                    <th>최근 7일 평균 대비</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedPerformanceMenus.map((menu) => (
-                    <tr key={menu.menu_name}>
-                      <td className="kds-menu-table-name">{menu.menu_name}</td>
-                      <td>{menu.orders}건</td>
-                      <td>{formatCurrency(menu.revenue)}</td>
-                      <td>{formatSeconds(menu.average_completion_seconds)}</td>
-                      <td>{menu.delayed_orders}건</td>
-                      <td>{formatDeltaRate(menu.yesterday_delta_rate)}</td>
-                      <td>{formatDeltaRate(menu.seven_day_average_delta_rate)}</td>
-                    </tr>
+        <section className="kds-stat-section" aria-label="메뉴별 판매 성과">
+          <div className="kds-stat-section-head">
+            <h3 className="kds-stat-section-title">메뉴별 판매 성과</h3>
+          </div>
+          {loading ? (
+            <p className="kds-panel-empty">메뉴별 통계를 불러오는 중입니다.</p>
+          ) : menus.length === 0 ? (
+            <p className="kds-panel-empty">메뉴 통계는 주문이 더 쌓이면 표시됩니다.</p>
+          ) : (
+            <div className="kds-menu-performance">
+              <div className="kds-menu-toolbar">
+                <div className="kds-menu-control-group" role="tablist" aria-label="메뉴 TOP 차트 기준">
+                  {MENU_CHART_OPTIONS.map((option) => (
+                    <button
+                      aria-selected={menuChartMetric === option.key}
+                      className={`kds-menu-control${menuChartMetric === option.key ? " active" : ""}`}
+                      key={option.key}
+                      onClick={() => setMenuChartMetric(option.key)}
+                      role="tab"
+                      type="button"
+                    >
+                      {option.label}
+                    </button>
                   ))}
-                </tbody>
-              </table>
+                </div>
+
+                <label className="kds-menu-sort">
+                  <span>정렬</span>
+                  <select value={menuSortKey} onChange={(event) => setMenuSortKey(event.target.value as MenuSortKey)}>
+                    {MENU_SORT_OPTIONS.map((option) => (
+                      <option key={option.key} value={option.key}>{option.label}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <div className="kds-menu-subsection">
+                <span className="kds-menu-subtitle">TOP 메뉴 · {getMenuChartLabel(menuChartMetric)}</span>
+                <div className="kds-menu-stat-list" aria-label={`메뉴 TOP ${getMenuChartLabel(menuChartMetric)}`}>
+                  {topMenus.map((menu, index) => {
+                    const value = getMenuChartValue(menu, menuChartMetric);
+                    const width = topMenuMaxValue > 0 ? Math.round((value / topMenuMaxValue) * 100) : 0;
+
+                    return (
+                      <div className="kds-menu-stat-row" key={menu.menu_name}>
+                        <span className="kds-menu-stat-rank">{index + 1}</span>
+                        <span className="kds-menu-stat-name">{menu.menu_name}</span>
+                        <div className="kds-menu-stat-bar-wrap">
+                          <div className="kds-menu-stat-bar" style={{ width: `${width}%` }} />
+                        </div>
+                        <span className="kds-menu-stat-count">{getMenuChartDisplayValue(menu, menuChartMetric)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="kds-menu-subsection">
+                <span className="kds-menu-subtitle">메뉴별 상세 표</span>
+                <div className="kds-menu-table-wrap">
+                  <table className="kds-menu-table">
+                    <thead>
+                      <tr>
+                        <th>메뉴명</th>
+                        <th>주문 수</th>
+                        <th>매출</th>
+                        <th>평균 완료 시간</th>
+                        <th>지연 수</th>
+                        <th>전일 대비</th>
+                        <th>최근 7일 평균 대비</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sortedPerformanceMenus.map((menu) => (
+                        <tr key={menu.menu_name}>
+                          <td className="kds-menu-table-name">{menu.menu_name}</td>
+                          <td>{menu.orders}건</td>
+                          <td>{formatCurrency(menu.revenue)}</td>
+                          <td>{formatSeconds(menu.average_completion_seconds)}</td>
+                          <td>{menu.delayed_orders}건</td>
+                          <td className={deltaClass(menu.yesterday_delta_rate)}>{formatDeltaRate(menu.yesterday_delta_rate)}</td>
+                          <td className={deltaClass(menu.seven_day_average_delta_rate)}>{formatDeltaRate(menu.seven_day_average_delta_rate)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          )}
+        </section>
+      </div>
     </section>
   );
 }
@@ -370,6 +379,38 @@ function formatSeconds(seconds: number | null) {
 
 function formatCurrency(value: number) {
   return value > 0 ? `${value.toLocaleString()}원` : "-";
+}
+
+function buildCountDelta(delta: number | null, unit: string): DeltaChip | null {
+  if (delta === null) {
+    return null;
+  }
+  if (delta === 0) {
+    return { text: "7일 평균과 비슷", tone: "flat" };
+  }
+  const up = delta > 0;
+  return { text: `${up ? "▲" : "▼"} ${Math.abs(delta)}${unit} · 7일 평균 대비`, tone: up ? "up" : "down" };
+}
+
+function buildCurrencyDelta(delta: number | null): DeltaChip | null {
+  if (delta === null) {
+    return null;
+  }
+  if (delta === 0) {
+    return { text: "7일 평균과 비슷", tone: "flat" };
+  }
+  const up = delta > 0;
+  return { text: `${up ? "▲" : "▼"} ${Math.abs(delta).toLocaleString()}원 · 7일 평균 대비`, tone: up ? "up" : "down" };
+}
+
+function buildSecondsDelta(delta: number | null): DeltaChip | null {
+  if (delta === null || delta === 0) {
+    return null;
+  }
+  // 완료 시간은 낮을수록 좋음 → 감소가 긍정
+  const faster = delta < 0;
+  const label = formatSeconds(Math.abs(delta));
+  return { text: `${faster ? "▼" : "▲"} ${label} · 7일 평균 대비`, tone: faster ? "up" : "down" };
 }
 
 function getHourlyMetricLabel(metric: HourlyMetric) {
@@ -522,8 +563,15 @@ function getMenuChartDisplayValue(menu: KdsStatsMenu, metric: MenuChartMetric) {
 
 function formatDeltaRate(rate: number | null) {
   if (rate === null) {
-    return "";
+    return "-";
   }
   const sign = rate > 0 ? "+" : "";
   return `${sign}${rate.toFixed(1)}%`;
+}
+
+function deltaClass(rate: number | null) {
+  if (rate === null || rate === 0) {
+    return "kds-menu-delta flat";
+  }
+  return rate > 0 ? "kds-menu-delta up" : "kds-menu-delta down";
 }
